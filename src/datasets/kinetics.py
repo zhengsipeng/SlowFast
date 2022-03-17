@@ -74,7 +74,7 @@ class Kinetics(torch.utils.data.Dataset):
             )
 
         logger.info("Constructing Kinetics {}...".format(mode))
-        import pdb; pdb.set_trace()
+        
         self._construct_loader()
         self.aug = False
         self.rand_erase = False
@@ -100,7 +100,7 @@ class Kinetics(torch.utils.data.Dataset):
         self._path_to_videos = []
         self._labels = []
         self._spatial_temporal_idx = []
-        import pdb; pdb.set_trace()
+
         with pathmgr.open(path_to_file, "r") as f:
             for clip_idx, path_label in enumerate(f.read().splitlines()):
                 #import pdb; pdb.set_trace()
@@ -209,7 +209,7 @@ class Kinetics(torch.utils.data.Dataset):
         # Try to decode and sample a clip from a video. If the video can not be
         # decoded, repeatly find a random video replacement that can be decoded.
         #self._num_retries = 2
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         for i_try in range(self._num_retries):
             video_container = None
             try:

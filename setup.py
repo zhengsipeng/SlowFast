@@ -4,11 +4,11 @@
 from setuptools import find_packages, setup
 
 setup(
-    name="slowfast",
+    name="src",
     version="1.0",
     author="FAIR",
     url="unknown",
-    description="SlowFast Video Understanding",
+    description="src Video Understanding",
     install_requires=[
         "yacs>=0.1.6",
         "pyyaml>=5.1",

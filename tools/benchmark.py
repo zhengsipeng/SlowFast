@@ -4,10 +4,10 @@
 A script to benchmark data loading.
 """
 
-import slowfast.utils.logging as logging
-from slowfast.utils.benchmark import benchmark_data_loading
-from slowfast.utils.misc import launch_job
-from slowfast.utils.parser import load_config, parse_args
+import src.utils.logging as logging
+from src.utils.benchmark import benchmark_data_loading
+from src.utils.misc import launch_job
+from src.utils.parser import load_config, parse_args
 
 logger = logging.get_logger(__name__)
 

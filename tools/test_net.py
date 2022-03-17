@@ -2,21 +2,22 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
 """Multi-view test a video classification model."""
-
+#import warnings
+#warnings.filterwarnings("ignore")
 import numpy as np
 import os
 import pickle
 import torch
 
-import slowfast.utils.checkpoint as cu
-import slowfast.utils.distributed as du
-import slowfast.utils.logging as logging
-import slowfast.utils.misc as misc
-import slowfast.visualization.tensorboard_vis as tb
-from slowfast.datasets import loader
-from slowfast.models import build_model
-from slowfast.utils.env import pathmgr
-from slowfast.utils.meters import AVAMeter, TestMeter
+import src.utils.checkpoint as cu
+import src.utils.distributed as du
+import src.utils.logging as logging
+import src.utils.misc as misc
+import src.visualization.tensorboard_vis as tb
+from src.datasets import loader
+from src.models import build_model
+from src.utils.env import pathmgr
+from src.utils.meters import AVAMeter, TestMeter
 
 logger = logging.get_logger(__name__)
 

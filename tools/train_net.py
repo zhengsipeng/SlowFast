@@ -8,20 +8,21 @@ import pprint
 import torch
 from fvcore.nn.precise_bn import get_bn_modules, update_bn_stats
 
-import slowfast.models.losses as losses
-import slowfast.models.optimizer as optim
-import slowfast.utils.checkpoint as cu
-import slowfast.utils.distributed as du
-import slowfast.utils.logging as logging
-import slowfast.utils.metrics as metrics
-import slowfast.utils.misc as misc
-import slowfast.visualization.tensorboard_vis as tb
-from slowfast.datasets import loader
-from slowfast.datasets.mixup import MixUp
-from slowfast.models import build_model
-from slowfast.utils.meters import AVAMeter, EpochTimer, TrainMeter, ValMeter
-from slowfast.utils.multigrid import MultigridSchedule
-
+import src.models.losses as losses
+import src.models.optimizer as optim
+import src.utils.checkpoint as cu
+import src.utils.distributed as du
+import src.utils.logging as logging
+import src.utils.metrics as metrics
+import src.utils.misc as misc
+import src.visualization.tensorboard_vis as tb
+from src.datasets import loader
+from src.datasets.mixup import MixUp
+from src.models import build_model
+from src.utils.meters import AVAMeter, EpochTimer, TrainMeter, ValMeter
+from src.utils.multigrid import MultigridSchedule
+#import warnings
+#warnings.filterwarnings("ignore")
 logger = logging.get_logger(__name__)
 
 

@@ -8,7 +8,7 @@ import torch
 import src.utils.lr_policy as lr_policy
 
 
-def construct_optimizer(model, cfg):
+def build_optimizer_parameters(model, cfg):
     """
     Construct a stochastic gradient descent or ADAM optimizer with momentum.
     Details can be found in:
@@ -28,6 +28,8 @@ def construct_optimizer(model, cfg):
     zero_parameters = []
     no_grad_parameters = []
     skip = {}
+    skip = model.no_weight_decay()
+    '''
     if cfg.NUM_GPUS > 1:
         if hasattr(model.module, "no_weight_decay"):
             skip = model.module.no_weight_decay()
@@ -35,7 +37,7 @@ def construct_optimizer(model, cfg):
     else:
         if hasattr(model, "no_weight_decay"):
             skip = model.no_weight_decay()
-
+    '''
     for name, m in model.named_modules():
         is_bn = isinstance(m, torch.nn.modules.batchnorm._NormBase)
         for p in m.parameters(recurse=False):
@@ -78,6 +80,24 @@ def construct_optimizer(model, cfg):
             len(no_grad_parameters),
         )
     )
+    return optim_params
+
+def construct_optimizer(model, cfg):
+    """
+    Construct a stochastic gradient descent or ADAM optimizer with momentum.
+    Details can be found in:
+    Herbert Robbins, and Sutton Monro. "A stochastic approximation method."
+    and
+    Diederik P.Kingma, and Jimmy Ba.
+    "Adam: A Method for Stochastic Optimization."
+
+    Args:
+        model (model): model to perform stochastic gradient descent
+        optimization or ADAM optimization.
+        cfg (config): configs of hyper-parameters of SGD or ADAM, includes base
+        learning rate,  momentum, weight_decay, dampening, and etc.
+    """
+    optim_params = build_optimizer_parameters(model, cfg)
 
     if cfg.SOLVER.OPTIMIZING_METHOD == "sgd":
         return torch.optim.SGD(

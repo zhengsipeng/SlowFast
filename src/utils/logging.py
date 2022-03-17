@@ -37,7 +37,7 @@ def _cached_log_stream(filename):
     return io
 
 
-def setup_logging(output_dir=None):
+def setup_logging(is_dist, output_dir=None):
     """
     Sets up the logging for multiple processes. Only enable the logging for the
     master process, and suppress logging for the non-master processes.
@@ -45,7 +45,7 @@ def setup_logging(output_dir=None):
     # Set up logging format.
     _FORMAT = "[%(levelname)s: %(filename)s: %(lineno)4d]: %(message)s"
 
-    if du.is_master_proc():
+    if du.is_master_proc(is_dist):
         # Enable logging for the master process.
         logging.root.handlers = []
     else:
@@ -60,13 +60,13 @@ def setup_logging(output_dir=None):
         datefmt="%m/%d %H:%M:%S",
     )
 
-    if du.is_master_proc():
+    if du.is_master_proc(is_dist):
         ch = logging.StreamHandler(stream=sys.stdout)
         ch.setLevel(logging.DEBUG)
         ch.setFormatter(plain_formatter)
         logger.addHandler(ch)
 
-    if output_dir is not None and du.is_master_proc(du.get_world_size()):
+    if output_dir is not None and du.is_master_proc(is_dist):
         filename = os.path.join(output_dir, "stdout.log")
         fh = logging.StreamHandler(_cached_log_stream(filename))
         fh.setLevel(logging.DEBUG)

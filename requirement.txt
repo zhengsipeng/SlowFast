@@ -11,3 +11,5 @@ pandas
 opencv-python 
 av 
 scikit-learn
+deepspeed
+mpi4py

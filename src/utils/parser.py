@@ -5,7 +5,7 @@
 
 import argparse
 import sys
-
+import deepspeed
 import src.utils.checkpoint as cu
 from src.config.defaults import get_cfg
 
@@ -59,6 +59,11 @@ def parse_args():
         default=None,
         nargs=argparse.REMAINDER,
     )
+    parser.add_argument('--blob_mount_dir', default=".", type=str)  # /blob_mount
+    parser.add_argument("--distributed", action="store_true")
+    parser.add_argument('--fp16', action='store_true', help='enable fp16')
+    parser = deepspeed.add_config_arguments(parser)
+
     if len(sys.argv) == 1:
         parser.print_help()
     return parser.parse_args()
@@ -90,5 +95,5 @@ def load_config(args):
         cfg.OUTPUT_DIR = args.output_dir
 
     # Create the checkpoint dir.
-    cu.make_checkpoint_dir(cfg.OUTPUT_DIR)
+    cu.make_checkpoint_dir(args.distributed, cfg.OUTPUT_DIR)
     return cfg

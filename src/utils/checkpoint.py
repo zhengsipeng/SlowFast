@@ -18,7 +18,7 @@ from src.utils.env import checkpoint_pathmgr as pathmgr
 logger = logging.get_logger(__name__)
 
 
-def make_checkpoint_dir(path_to_job):
+def make_checkpoint_dir(is_dist, path_to_job):
     """
     Creates the checkpoint directory (if not present already).
     Args:
@@ -26,7 +26,7 @@ def make_checkpoint_dir(path_to_job):
     """
     checkpoint_dir = os.path.join(path_to_job, "checkpoints")
     # Create the checkpoint dir from the master process
-    if du.is_master_proc() and not pathmgr.exists(checkpoint_dir):
+    if du.is_master_proc(is_dist) and not pathmgr.exists(checkpoint_dir):
         try:
             pathmgr.mkdirs(checkpoint_dir)
         except Exception:

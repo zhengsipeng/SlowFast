@@ -91,6 +91,9 @@ def init_process_group(
     )
 
 
+def is_master_proc(distributed):
+    return (dist.get_rank() == 0) or (distributed == False)
+'''
 def is_master_proc(num_gpus=8):
     """
     Determines if the current process is the master process.
@@ -99,7 +102,7 @@ def is_master_proc(num_gpus=8):
         return dist.get_rank() % num_gpus == 0
     else:
         return True
-
+'''
 
 def is_root_proc():
     """

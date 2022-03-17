@@ -6,6 +6,7 @@ import logging
 import math
 import numpy as np
 import os
+import random
 from datetime import datetime
 import psutil
 import torch
@@ -21,6 +22,14 @@ from src.models.batchnorm_helper import SubBatchNorm3d
 from src.utils.env import pathmgr
 
 logger = logging.get_logger(__name__)
+
+
+def set_random_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.benchmark = True
 
 
 def check_nan_losses(loss):
@@ -280,7 +289,7 @@ def aggregate_sub_bn_stats(module):
     return count
 
 
-def launch_job(cfg, init_method, func, daemon=False):
+def launch_job(args, cfg, init_method, func, daemon=False):
     """
     Run 'func' on one or more GPUs, specified in cfg
     Args:
@@ -292,6 +301,7 @@ def launch_job(cfg, init_method, func, daemon=False):
         daemon (bool): The spawned processes’ daemon flag. If set to True,
             daemonic processes will be created
     """
+    
     if cfg.NUM_GPUS > 1:
         torch.multiprocessing.spawn(
             mpu.run,

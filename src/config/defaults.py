@@ -416,6 +416,7 @@ _C.DATA.PATH_LABEL_SEPARATOR = " "
 # Video path prefix if any.
 _C.DATA.PATH_PREFIX = ""
 
+_C.DATA.PATH_TO_SAVE_DIR = ""
 # The number of frames of the input clip.
 _C.DATA.NUM_FRAMES = 8
 

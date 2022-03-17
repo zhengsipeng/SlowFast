@@ -6,6 +6,8 @@
 import numpy as np
 import pprint
 import torch
+import deepspeed
+import os
 from fvcore.nn.precise_bn import get_bn_modules, update_bn_stats
 
 import src.models.losses as losses
@@ -19,6 +21,7 @@ import src.visualization.tensorboard_vis as tb
 from src.datasets import loader
 from src.datasets.mixup import MixUp
 from src.models import build_model
+from src.utils.misc import set_random_seed
 from src.utils.meters import AVAMeter, EpochTimer, TrainMeter, ValMeter
 from src.utils.multigrid import MultigridSchedule
 #import warnings
@@ -398,21 +401,12 @@ def build_trainer(cfg):
     )
 
 
-def train(cfg):
-    """
-    Train a video model for many epochs on train set and evaluate it on val set.
-    Args:
-        cfg (CfgNode): configs. Details can be found in
-            slowfast/config/defaults.py
-    """
-    # Set up environment.
-    du.init_distributed_training(cfg)
+def train(args, cfg):
     # Set random seed from configs.
-    np.random.seed(cfg.RNG_SEED)
-    torch.manual_seed(cfg.RNG_SEED)
-
+    set_random_seed(cfg.RNG_SEED)
+    
     # Setup logging format.
-    logging.setup_logging(cfg.OUTPUT_DIR)
+    logging.setup_logging(args.distributed, cfg.OUTPUT_DIR)
 
     # Init multigrid.
     multigrid = None
@@ -421,25 +415,29 @@ def train(cfg):
         cfg = multigrid.init_multigrid(cfg)
         if cfg.MULTIGRID.LONG_CYCLE:
             cfg, _ = multigrid.update_long_cycle(cfg, cur_epoch=0)
+    
     # Print config.
     logger.info("Train with config:")
     logger.info(pprint.pformat(cfg))
 
     # Build the video model and print model statistics.
     model = build_model(cfg)
-    if du.is_master_proc() and cfg.LOG_MODEL_INFO:
+    if args.resume != "":
+        logger.info(f"Loading model weights from {args.resume}")
+        load_model_weights_with_mismatch(model, 
+                                         os.path.join(args.blob_mount_dir, 
+                                         args.resume))
+
+    parameter_group = optim.build_optimizer_parameters(model, cfg)
+    if args.distributed:
+        model_engine, optimizer, _, _ = deepspeed.initialize(args=args,
+                                                            model=model,
+                                                            model_parameters=parameter_group)
+    
+    if du.is_master_proc(args.distributed) and cfg.LOG_MODEL_INFO:
         misc.log_model_info(model, cfg, use_train_input=True)
-
-    # Construct the optimizer.
-    optimizer = optim.construct_optimizer(model, cfg)
-    # Create a GradScaler for mixed precision training
-    scaler = torch.cuda.amp.GradScaler(enabled=cfg.TRAIN.MIXED_PRECISION)
-
-    # Load a checkpoint to resume training if applicable.
-    start_epoch = cu.load_train_checkpoint(
-        cfg, model, optimizer, scaler if cfg.TRAIN.MIXED_PRECISION else None
-    )
-
+        logging.add_log_to_file(logger, os.path.join(args.blob_mount_dir, cfg.OUTPUT_DIR, "logs.txt"))
+    import pdb; pdb.set_trace()
     # Create the video train and val loaders.
     train_loader = loader.construct_loader(cfg, "train")
     val_loader = loader.construct_loader(cfg, "val")

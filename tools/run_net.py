@@ -3,8 +3,8 @@
 #import warnings
 #warnings.filterwarnings("ignore")
 """Wrapper to train and test a video classification model."""
+import deepspeed
 from src.config.defaults import assert_and_infer_cfg
-from src.utils.misc import launch_job
 from src.utils.parser import load_config, parse_args
 
 from demo_net import demo
@@ -23,23 +23,25 @@ def main():
 
     # Perform training.
     if cfg.TRAIN.ENABLE:
-        launch_job(cfg=cfg, init_method=args.init_method, func=train)
-
+        train(args, cfg)
+  
     # Perform multi-clip testing.
     if cfg.TEST.ENABLE:
-        launch_job(cfg=cfg, init_method=args.init_method, func=test)
+        test(args, cfg)
 
     # Perform model visualization.
+    '''
     if cfg.TENSORBOARD.ENABLE and (
         cfg.TENSORBOARD.MODEL_VIS.ENABLE
         or cfg.TENSORBOARD.WRONG_PRED_VIS.ENABLE
     ):
         launch_job(cfg=cfg, init_method=args.init_method, func=visualize)
-
+    '''
     # Run demo.
     if cfg.DEMO.ENABLE:
         demo(cfg)
 
 
 if __name__ == "__main__":
+    deepspeed.init_distributed()
     main()

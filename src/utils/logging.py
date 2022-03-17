@@ -97,3 +97,12 @@ def log_json_stats(stats):
     json_stats = simplejson.dumps(stats, sort_keys=True, use_decimal=True)
     logger = get_logger(__name__)
     logger.info("json_stats: {:s}".format(json_stats))
+
+
+def add_log_to_file(logger, log_path):
+    fh = logging.FileHandler(log_path)
+    _LOG_FMT = '%(asctime)s - %(levelname)s - %(name)s -   %(message)s'
+    _DATE_FMT = '%m/%d/%Y %H:%M:%S'
+    formatter = logging.Formatter(_LOG_FMT, datefmt=_DATE_FMT)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)

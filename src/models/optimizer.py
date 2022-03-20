@@ -6,6 +6,11 @@
 import torch
 
 import src.utils.lr_policy as lr_policy
+import torch
+from timm.scheduler.cosine_lr import CosineLRScheduler
+from timm.scheduler.step_lr import StepLRScheduler
+from timm.scheduler.scheduler import Scheduler
+from timm.scheduler.plateau_lr import PlateauLRScheduler
 
 
 def build_optimizer_parameters(model, cfg):
@@ -148,3 +153,41 @@ def set_lr(optimizer, new_lr):
     """
     for param_group in optimizer.param_groups:
         param_group["lr"] = new_lr
+
+
+def construct_scheduler(config, optimizer, n_iter_per_epoch):
+    num_steps = int(config.SOLVER.MAX_EPOCH * n_iter_per_epoch)
+    warmup_steps = int(config.SOLVER.WARMUP_EPOCHS * n_iter_per_epoch)
+
+    lr_scheduler = None
+    if config.SOLVER.LR_POLICY == 'cosine':
+        lr_scheduler = CosineLRScheduler(
+            optimizer,
+            t_initial=num_steps,
+            lr_min=config.SOLVER.COSINE_END_LR,
+            warmup_lr_init=config.SOLVER.WARMUP_START_LR,
+            warmup_t=warmup_steps,
+            cycle_limit=1,
+            t_in_epochs=False,
+        )
+    elif config.SOLVER.LR_POLICY == 'linear':
+        lr_scheduler = LinearLRScheduler(
+            optimizer,
+            t_initial=num_steps,
+            lr_min_rate=0.01,
+            warmup_lr_init=config.SOLVER.WARMUP_START_LR,
+            warmup_t=warmup_steps,
+            t_in_epochs=False,
+        )
+    elif config.SOLVER.LR_POLICY == 'step':
+        decay_steps = int(config.SOLVER.DECAY_EPOCHS * n_iter_per_epoch)
+        lr_scheduler = StepLRScheduler(
+            optimizer,
+            decay_t=decay_steps,
+            decay_rate=config.SOLVER.STEP_DECAY_RATE,
+            warmup_lr_init=config.SOLVER.WARMUP_START_LR,
+            warmup_t=warmup_steps,
+            t_in_epochs=False,
+        )
+
+    return lr_scheduler

@@ -17,28 +17,29 @@ def main():
     """
     Main function to spawn the train and test process.
     """
+    
     args = parse_args()
     cfg = load_config(args)
     cfg = assert_and_infer_cfg(cfg)
-
+    
     # Perform training.
-    if cfg.TRAIN.ENABLE:
+    if args.mode == "train":
         train(args, cfg)
-  
-    # Perform multi-clip testing.
-    if cfg.TEST.ENABLE:
+    elif args.mode == "test":
+        # Perform multi-clip testing.
         test(args, cfg)
-
-    # Perform model visualization.
-    '''
-    if cfg.TENSORBOARD.ENABLE and (
-        cfg.TENSORBOARD.MODEL_VIS.ENABLE
-        or cfg.TENSORBOARD.WRONG_PRED_VIS.ENABLE
-    ):
-        launch_job(cfg=cfg, init_method=args.init_method, func=visualize)
-    '''
-    # Run demo.
-    if cfg.DEMO.ENABLE:
+    elif args.mode == "vis":
+        raise NotImplementedError
+        # Perform model visualization.
+        '''
+        if cfg.TENSORBOARD.ENABLE and (
+            cfg.TENSORBOARD.MODEL_VIS.ENABLE
+            or cfg.TENSORBOARD.WRONG_PRED_VIS.ENABLE
+        ):
+            launch_job(cfg=cfg, init_method=args.init_method, func=visualize)
+        '''
+    else:
+        # Run demo.
         demo(cfg)
 
 

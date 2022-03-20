@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 
+import imp
 import json
 import logging
 import math
@@ -83,7 +84,7 @@ def cpu_mem_usage():
     return usage, total
 
 
-def _get_model_analysis_input(cfg, use_train_input):
+def _get_model_analysis_input(cfg, use_train_input, fp16=False):
     """
     Return a dummy input for model analysis with batch size 1. The input is
         used for analyzing the model (counting flops and activations etc.).
@@ -127,22 +128,16 @@ def _get_model_analysis_input(cfg, use_train_input):
             )
     model_inputs = pack_pathway_output(cfg, input_tensors)
     for i in range(len(model_inputs)):
-        model_inputs[i] = model_inputs[i].unsqueeze(0)
+        tmp = model_inputs[i].unsqueeze(0)
+        model_inputs[i] = tmp.half() if fp16 else tmp
         if cfg.NUM_GPUS:
             model_inputs[i] = model_inputs[i].cuda(non_blocking=True)
-
-    # If detection is enabled, count flops for one proposal.
-    if cfg.DETECTION.ENABLE:
-        bbox = torch.tensor([[0, 0, 1.0, 0, 1.0]])
-        if cfg.NUM_GPUS:
-            bbox = bbox.cuda()
-        inputs = (model_inputs, bbox)
-    else:
-        inputs = (model_inputs,)
+    
+    inputs = (model_inputs,)
     return inputs
 
 
-def get_model_stats(model, cfg, mode, use_train_input):
+def get_model_stats(model, cfg, mode, use_train_input, fp16=False):
     """
     Compute statistics for the current model given the config.
     Args:
@@ -170,14 +165,15 @@ def get_model_stats(model, cfg, mode, use_train_input):
     # Evaluation mode can avoid getting stuck with sync batchnorm.
     model_mode = model.training
     model.eval()
-    inputs = _get_model_analysis_input(cfg, use_train_input)
+    inputs = _get_model_analysis_input(cfg, use_train_input, fp16)
     count_dict, *_ = model_stats_fun(model, inputs)
     count = sum(count_dict.values())
     model.train(model_mode)
+    
     return count
 
 
-def log_model_info(model, cfg, use_train_input=True):
+def log_model_info(model, cfg, use_train_input=True, fp16=False):
     """
     Log info, includes number of parameters, gpu usage, gflops and activation count.
         The model info is computed when the model is in validation mode.
@@ -191,14 +187,15 @@ def log_model_info(model, cfg, use_train_input=True):
     logger.info("Model:\n{}".format(model))
     logger.info("Params: {:,}".format(params_count(model)))
     logger.info("Mem: {:,} MB".format(gpu_mem_usage()))
+   
     logger.info(
         "Flops: {:,} G".format(
-            get_model_stats(model, cfg, "flop", use_train_input)
+            get_model_stats(model, cfg, "flop", use_train_input, fp16)
         )
     )
     logger.info(
         "Activations: {:,} M".format(
-            get_model_stats(model, cfg, "activation", use_train_input)
+            get_model_stats(model, cfg, "activation", use_train_input, fp16)
         )
     )
     logger.info("nvidia-smi")

@@ -24,9 +24,7 @@ def all_gather(tensors):
     output_tensor = []
     world_size = dist.get_world_size()
     for tensor in tensors:
-        tensor_placeholder = [
-            torch.ones_like(tensor) for _ in range(world_size)
-        ]
+        tensor_placeholder = [torch.ones_like(tensor) for _ in range(world_size)]
         dist.all_gather(tensor_placeholder, tensor, async_op=False)
         gather_list.append(tensor_placeholder)
     for gathered_tensor in gather_list:
@@ -43,7 +41,7 @@ def all_reduce(tensors, average=True):
         average (bool): scales the reduced tensor by the number of overall
         processes across all machines.
     """
-
+   
     for tensor in tensors:
         dist.all_reduce(tensor, async_op=False)
     if average:

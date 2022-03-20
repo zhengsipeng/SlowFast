@@ -104,6 +104,21 @@ def is_checkpoint_epoch(cfg, cur_epoch, multigrid_schedule=None):
     return (cur_epoch + 1) % cfg.TRAIN.CHECKPOINT_PERIOD == 0
 
 
+def save_checkpoint(model, cur_epoch, blob_mount_dir, output_dir, fp16):
+    ckpt_id = cur_epoch
+    checkpoint_state_dict = {'epoch': cur_epoch}
+    PATH = output_dir + "/checkpoints"
+    if not os.path.exists(PATH):
+        os.makedirs(PATH)
+    save_dir = os.path.join(blob_mount_dir, PATH, 'epoch_{0:03d}.ckpt'.format(cur_epoch))
+    if fp16:
+        success = model.save_fp16_model(save_dir)
+    else:
+        success = model.save_checkpoint(save_dir, ckpt_id, checkpoint_state_dict)
+    status_msg = 'checkpointing: PATH={}, ckpt_id={}'.format(save_dir, ckpt_id)
+    logger.info(f"Success {status_msg}") if success else logger.warning(f"Failure {status_msg}")
+    
+'''
 def save_checkpoint(path_to_job, model, optimizer, epoch, cfg, scaler=None):
     """
     Save a checkpoint.
@@ -137,6 +152,8 @@ def save_checkpoint(path_to_job, model, optimizer, epoch, cfg, scaler=None):
     with pathmgr.open(path_to_checkpoint, "wb") as f:
         torch.save(checkpoint, f)
     return path_to_checkpoint
+'''
+
 
 
 def inflate_weight(state_dict_2d, state_dict_3d):
@@ -177,6 +194,17 @@ def inflate_weight(state_dict_2d, state_dict_3d):
         state_dict_inflated[k] = v3d.clone()
     return state_dict_inflated
 
+
+def resume_checkpoint(model, blob_mount_dir, output_dir):
+    save_dir = os.path.join(blob_mount_dir, output_dir, "checkpoints")
+    ckpt_file = os.listdir(save_dir)[-1]
+    save_path = os.path.join(save_dir, ckpt_file)
+    logger.info(f"resume from {save_path}")
+    _, checkpoint_state_dict = model.load_checkpoint(save_path)
+    start_epoch = checkpoint_state_dict['epoch']
+    del checkpoint_state_dict
+    return start_epoch
+    
 
 def load_checkpoint(
     path_to_checkpoint,
@@ -288,6 +316,7 @@ def load_checkpoint(
         # Load the checkpoint on CPU to avoid GPU mem spike.
         with pathmgr.open(path_to_checkpoint, "rb") as f:
             checkpoint = torch.load(f, map_location="cpu")
+        
         model_state_dict_3d = (
             model.module.state_dict() if data_parallel else model.state_dict()
         )
@@ -340,6 +369,7 @@ def load_checkpoint(
             epoch = -1
 
             # Load the optimizer state (commonly not done when fine-tuning)
+        
         if "epoch" in checkpoint.keys() and not epoch_reset:
             epoch = checkpoint["epoch"]
             if optimizer:
@@ -495,6 +525,7 @@ def load_train_checkpoint(cfg, model, optimizer, scaler=None):
     """
     Loading checkpoint logic for training.
     """
+    
     if cfg.TRAIN.AUTO_RESUME and has_checkpoint(cfg.OUTPUT_DIR):
         last_checkpoint = get_last_checkpoint(cfg.OUTPUT_DIR)
         logger.info("Load from last checkpoint, {}.".format(last_checkpoint))

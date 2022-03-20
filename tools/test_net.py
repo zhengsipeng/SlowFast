@@ -169,25 +169,21 @@ def test(cfg):
     test_loader = loader.construct_loader(cfg, "test")
     logger.info("Testing model for {} iterations".format(len(test_loader)))
 
-    if cfg.DETECTION.ENABLE:
-        assert cfg.NUM_GPUS == cfg.TEST.BATCH_SIZE or cfg.NUM_GPUS == 0
-        test_meter = AVAMeter(len(test_loader), cfg, mode="test")
-    else:
-        assert (
-            test_loader.dataset.num_videos
-            % (cfg.TEST.NUM_ENSEMBLE_VIEWS * cfg.TEST.NUM_SPATIAL_CROPS)
-            == 0
-        )
-        # Create meters for multi-view testing.
-        test_meter = TestMeter(
-            test_loader.dataset.num_videos
-            // (cfg.TEST.NUM_ENSEMBLE_VIEWS * cfg.TEST.NUM_SPATIAL_CROPS),
-            cfg.TEST.NUM_ENSEMBLE_VIEWS * cfg.TEST.NUM_SPATIAL_CROPS,
-            cfg.MODEL.NUM_CLASSES,
-            len(test_loader),
-            cfg.DATA.MULTI_LABEL,
-            cfg.DATA.ENSEMBLE_METHOD,
-        )
+    assert (
+        test_loader.dataset.num_videos
+        % (cfg.TEST.NUM_ENSEMBLE_VIEWS * cfg.TEST.NUM_SPATIAL_CROPS)
+        == 0
+    )
+    # Create meters for multi-view testing.
+    test_meter = TestMeter(
+        test_loader.dataset.num_videos
+        // (cfg.TEST.NUM_ENSEMBLE_VIEWS * cfg.TEST.NUM_SPATIAL_CROPS),
+        cfg.TEST.NUM_ENSEMBLE_VIEWS * cfg.TEST.NUM_SPATIAL_CROPS,
+        cfg.MODEL.NUM_CLASSES,
+        len(test_loader),
+        cfg.DATA.MULTI_LABEL,
+        cfg.DATA.ENSEMBLE_METHOD,
+    )
 
     # Set up writer for logging to Tensorboard format.
     if cfg.TENSORBOARD.ENABLE and du.is_master_proc(

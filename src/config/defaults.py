@@ -200,37 +200,6 @@ _C.RESNET.SPATIAL_STRIDES = [[1], [2], [2], [2]]
 # Size of dilation on different res stages.
 _C.RESNET.SPATIAL_DILATIONS = [[1], [1], [1], [1]]
 
-# ---------------------------------------------------------------------------- #
-# X3D  options
-# See https://arxiv.org/abs/2004.04730 for details about X3D Networks.
-# ---------------------------------------------------------------------------- #
-_C.X3D = CfgNode()
-
-# Width expansion factor.
-_C.X3D.WIDTH_FACTOR = 1.0
-
-# Depth expansion factor.
-_C.X3D.DEPTH_FACTOR = 1.0
-
-# Bottleneck expansion factor for the 3x3x3 conv.
-_C.X3D.BOTTLENECK_FACTOR = 1.0  #
-
-# Dimensions of the last linear layer before classificaiton.
-_C.X3D.DIM_C5 = 2048
-
-# Dimensions of the first 3x3 conv layer.
-_C.X3D.DIM_C1 = 12
-
-# Whether to scale the width of Res2, default is false.
-_C.X3D.SCALE_RES2 = False
-
-# Whether to use a BatchNorm (BN) layer before the classifier, default is false.
-_C.X3D.BN_LIN5 = False
-
-# Whether to use channelwise (=depthwise) convolution in the center (3x3x3)
-# convolution operation of the residual blocks.
-_C.X3D.CHANNELWISE_3x3x3 = True
-
 # -----------------------------------------------------------------------------
 # Nonlocal options
 # -----------------------------------------------------------------------------
@@ -379,27 +348,6 @@ _C.MVIT.SEP_POS_EMBED = False
 
 # Dropout rate for the MViT backbone.
 _C.MVIT.DROPOUT_RATE = 0.0
-
-
-# -----------------------------------------------------------------------------
-# SlowFast options
-# -----------------------------------------------------------------------------
-_C.SLOWFAST = CfgNode()
-
-# Corresponds to the inverse of the channel reduction ratio, $\beta$ between
-# the Slow and Fast pathways.
-_C.SLOWFAST.BETA_INV = 8
-
-# Corresponds to the frame rate reduction ratio, $\alpha$ between the Slow and
-# Fast pathways.
-_C.SLOWFAST.ALPHA = 8
-
-# Ratio of channel dimensions between the Slow and Fast pathways.
-_C.SLOWFAST.FUSION_CONV_CHANNEL_RATIO = 2
-
-# Kernel dimension used for fusing information from Fast pathway to Slow
-# pathway.
-_C.SLOWFAST.FUSION_KERNEL_SZ = 5
 
 
 # -----------------------------------------------------------------------------
@@ -562,6 +510,11 @@ _C.SOLVER.CLIP_GRAD_VAL = None
 
 # Clip gradient at this norm before optimizer update
 _C.SOLVER.CLIP_GRAD_L2NORM = None
+
+# Decay rate for StepLR
+_C.SOLVER.STEP_DECAY_RATE = 0.1
+
+_C.SOLVER.DECAY_EPOCHS = 100
 # ---------------------------------------------------------------------------- #
 # Misc options
 # ---------------------------------------------------------------------------- #

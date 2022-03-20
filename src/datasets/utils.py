@@ -8,7 +8,9 @@ import time
 from collections import defaultdict
 import cv2
 import torch
-from torch.utils.data.distributed import DistributedSampler
+import torch.distributed as dist
+#from torch.utils.data.distributed import DistributedSampler
+from torch.utils.data import DistributedSampler
 
 from src.utils.env import pathmgr
 
@@ -322,7 +324,7 @@ def revert_tensor_normalize(tensor, mean, std):
     return tensor
 
 
-def create_sampler(dataset, shuffle, cfg):
+def create_sampler(dataset, shuffle, is_dist):
     """
     Create sampler for the given dataset.
     Args:
@@ -334,7 +336,11 @@ def create_sampler(dataset, shuffle, cfg):
     Returns:
         sampler (Sampler): the created sampler.
     """
-    sampler = DistributedSampler(dataset) if cfg.NUM_GPUS > 1 else None
+    if is_dist:
+        num_tasks = dist.get_world_size()
+        global_rank = dist.get_rank()
+
+    sampler = DistributedSampler(dataset, num_replicas=num_tasks, rank=global_rank, shuffle=shuffle) if is_dist else None
 
     return sampler
 

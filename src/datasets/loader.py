@@ -7,6 +7,7 @@ import itertools
 import numpy as np
 from functools import partial
 import torch
+import torch.distributed as dist
 from torch.utils.data._utils.collate import default_collate
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data.sampler import RandomSampler
@@ -79,7 +80,7 @@ def detection_collate(batch):
     return inputs, labels, video_idx, collated_extra_data
 
 
-def construct_loader(cfg, split, is_precise_bn=False):
+def construct_loader(cfg, split, is_precise_bn=False, is_dist=False):
     """
     Constructs the data loader for the given dataset.
     Args:
@@ -89,19 +90,23 @@ def construct_loader(cfg, split, is_precise_bn=False):
             `val`, and `test`.
     """
     assert split in ["train", "val", "test"]
+
     if split in ["train"]:
         dataset_name = cfg.TRAIN.DATASET
-        batch_size = int(cfg.TRAIN.BATCH_SIZE / max(1, cfg.NUM_GPUS))
+        #batch_size = int(cfg.TRAIN.BATCH_SIZE / max(1, dist.get_world_size()))
+        batch_size = cfg.TRAIN.BATCH_SIZE
         shuffle = True
         drop_last = True
     elif split in ["val"]:
         dataset_name = cfg.TRAIN.DATASET
-        batch_size = int(cfg.TRAIN.BATCH_SIZE / max(1, cfg.NUM_GPUS))
+        batch_size = cfg.TRAIN.BATCH_SIZE
+        #batch_size = int(cfg.TRAIN.BATCH_SIZE / max(1, dist.get_world_size()))
         shuffle = False
         drop_last = False
     elif split in ["test"]:
         dataset_name = cfg.TEST.DATASET
-        batch_size = int(cfg.TEST.BATCH_SIZE / max(1, cfg.NUM_GPUS))
+        batch_size = cfg.TEST.BATCH_SIZE
+        #batch_size = int(cfg.TEST.BATCH_SIZE / max(1, dist.get_world_size()))
         shuffle = False
         drop_last = False
 
@@ -119,13 +124,10 @@ def construct_loader(cfg, split, is_precise_bn=False):
             worker_init_fn=utils.loader_worker_init_fn(dataset),
         )
     else:
-        if (
-            cfg.MULTIGRID.SHORT_CYCLE
-            and split in ["train"]
-            and not is_precise_bn
-        ):
+        shuffle = True if (split in ["train"] and not is_precise_bn) else False
+        if (cfg.MULTIGRID.SHORT_CYCLE and split in ["train"] and not is_precise_bn):
             # Create a sampler for multi-process training
-            sampler = utils.create_sampler(dataset, shuffle, cfg)
+            sampler = utils.create_sampler(dataset, shuffle, is_dist)
             batch_sampler = ShortCycleBatchSampler(
                 sampler, batch_size=batch_size, drop_last=drop_last, cfg=cfg
             )
@@ -139,11 +141,9 @@ def construct_loader(cfg, split, is_precise_bn=False):
             )
         else:
             # Create a sampler for multi-process training
-            sampler = utils.create_sampler(dataset, shuffle, cfg)
+            sampler = utils.create_sampler(dataset, shuffle, is_dist)
             # Create a loader
-            if cfg.DETECTION.ENABLE:
-                collate_func = detection_collate
-            elif cfg.AUG.NUM_SAMPLE > 1 and split in ["train"]:
+            if cfg.AUG.NUM_SAMPLE > 1 and split in ["train"]:
                 collate_func = partial(
                     multiple_samples_collate, fold="imagenet" in dataset_name
                 )
@@ -171,10 +171,8 @@ def shuffle_dataset(loader, cur_epoch):
         loader (loader): data loader to perform shuffle.
         cur_epoch (int): number of the current epoch.
     """
-    if (
-        loader._dataset_kind
-        == torch.utils.data.dataloader._DatasetKind.Iterable
-    ):
+    
+    if loader._dataset_kind == torch.utils.data.dataloader._DatasetKind.Iterable:
         if hasattr(loader.dataset, "sampler"):
             sampler = loader.dataset.sampler
         else:
@@ -190,6 +188,7 @@ def shuffle_dataset(loader, cur_epoch):
     assert isinstance(
         sampler, (RandomSampler, DistributedSampler)
     ), "Sampler type '{}' not supported".format(type(sampler))
+
     # RandomSampler handles shuffling automatically
     if isinstance(sampler, DistributedSampler):
         # DistributedSampler shuffles data based on epoch

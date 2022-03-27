@@ -83,7 +83,7 @@ time.sleep(30)
 
 print("################################INSTALL ADDITIONAL REQURIEMENTS! ####################################")
 os.system('pip install lmdb')
-
+os.system('pip install timm')
 print("################################START TO RUN COMMAND! ####################################")
 
 # os.system(". setup.sh")

@@ -145,7 +145,8 @@ simplejson \
 pandas \
 opencv-python \
 av  \
-scikit-learn
+scikit-learn \
+mpi4py
 
 
 RUN export CUDA_HOME="/usr/local/cuda"

@@ -30,7 +30,7 @@ from src.utils.multigrid import MultigridSchedule
 #warnings.filterwarnings("ignore")
 logger = logging.get_logger(__name__)
 
-
+    
 def train_epoch(train_loader, model, optimizer, train_meter, cur_epoch, cfg,
                 is_dist=False, writer=None, fp16=False):
     """

@@ -8,7 +8,7 @@ import numpy as np
 import os
 import pickle
 import torch
-
+import deepspeed
 import src.utils.checkpoint as cu
 import src.utils.distributed as du
 import src.utils.logging as logging
@@ -18,7 +18,8 @@ from src.datasets import loader
 from src.models import build_model
 from src.utils.env import pathmgr
 from src.utils.meters import AVAMeter, TestMeter
-
+from src.utils.misc import set_random_seed
+import src.models.optimizer as optim
 logger = logging.get_logger(__name__)
 
 
@@ -138,18 +139,15 @@ def perform_test(test_loader, model, test_meter, cfg, writer=None):
     return test_meter
 
 
-def test(cfg):
+def test(args, cfg):
     """
     Perform multi-view testing on the pretrained video model.
     Args:
         cfg (CfgNode): configs. Details can be found in
             slowfast/config/defaults.py
     """
-    # Set up environment.
-    du.init_distributed_training(cfg)
     # Set random seed from configs.
-    np.random.seed(cfg.RNG_SEED)
-    torch.manual_seed(cfg.RNG_SEED)
+    set_random_seed(cfg.RNG_SEED)
 
     # Setup logging format.
     logging.setup_logging(cfg.OUTPUT_DIR)
@@ -160,10 +158,22 @@ def test(cfg):
 
     # Build the video model and print model statistics.
     model = build_model(cfg)
+
+    if not cfg.TEST.USE_DEEPSPEED_CKPT:
+        cu.load_test_checkpoint(cfg, model)
+
+    # Initialize the DeepSpeed-Inference engine
+    model_engine = deepspeed.init_inference(model,
+                                mp_size=cfg.TEST.NUM_GPUS,
+                                dtype=torch.half if args.fp16 else torch.float,
+                                checkpoint=None if cfg.TEST.USE_DEEPSPEED_CKPT else cfg.TEST.CKPT_JSON_FILE,
+                                replace_method='auto',
+                                replace_with_kernel_inject=True)
+    model = model_engine.module
+    
+    import pdb; pdb.set_trace()
     if du.is_master_proc() and cfg.LOG_MODEL_INFO:
         misc.log_model_info(model, cfg, use_train_input=False)
-
-    cu.load_test_checkpoint(cfg, model)
 
     # Create video testing loaders.
     test_loader = loader.construct_loader(cfg, "test")

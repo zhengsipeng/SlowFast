@@ -4,7 +4,7 @@ import tqdm
 import csv
 import pdb
 
-blob_dir = "/home/v-sizheng/blob/teamdrive/kinetics400_cvdf"
+blob_dir = "/home/v-sizheng/blob/teamdrive/video_data/kinetics400_cvdf"
 def make_part_db(split):
     csvFile = open("%s_clean.csv"%split)
     reader = csv.reader(csvFile)    
@@ -39,7 +39,7 @@ def make_kinetics_db(split):
         new_csv.append(line)
     csvFile.close()
 
-    video_dir = "/home/v-sizheng/Desktop/SlowFast/data/kinetics400/"
+    video_dir = "/raid/sipeng/actnet/data/kinetics400"
     csvFile = open("%s.csv"%split, "w") 
     writer = csv.writer(csvFile, delimiter=" ")
     

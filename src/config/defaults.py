@@ -164,6 +164,13 @@ _C.TEST.NUM_SPATIAL_CROPS = 3
 _C.TEST.CHECKPOINT_TYPE = "pytorch"
 # Path to saving prediction results file.
 _C.TEST.SAVE_RESULTS_PATH = ""
+
+# Use the checkpoint trained by deepspeed or not
+_C.TEST.USE_DEEPSPEED_CKPT = False
+
+# The jsonfile path of checkpoint file
+_C.CKPT_JSON_FILE = ""
+
 # -----------------------------------------------------------------------------
 # ResNet options
 # -----------------------------------------------------------------------------

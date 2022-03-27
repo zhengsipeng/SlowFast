@@ -62,7 +62,7 @@ def parse_args():
     parser.add_argument('--blob_mount_dir', default=".", type=str)  # /blob_mount
     parser.add_argument("--distributed", action="store_true")
     parser.add_argument('--fp16', action='store_true', help='enable fp16')
-    parser.add_argument("mode", default="train", type=str)
+    parser.add_argument("--mode", default="train", type=str)
     parser.add_argument('--resume', action="store_true")
     parser.add_argument('--local_rank', type=int, default=-1, help='local rank passed from distributed launcher')
     parser = deepspeed.add_config_arguments(parser)
